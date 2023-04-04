@@ -1,11 +1,16 @@
+import 'package:flutter/foundation.dart';
+import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/rendering.dart';
 import 'dart:async';
-
 import 'package:flutter/services.dart';
+import 'package:plugin_dialog/nativeweb.dart';
 import 'package:plugin_dialog/plugin_dialog.dart';
 
 void main() {
-  runApp(const MyApp());
+  runApp(const MaterialApp(
+    home: MyApp(),
+  ));
 }
 
 class MyApp extends StatefulWidget {
@@ -47,23 +52,113 @@ class _MyAppState extends State<MyApp> {
     });
   }
 
+  void showNative() async {
+    return await _pluginDialogPlugin.showButton();
+  }
+
   @override
   Widget build(BuildContext context) {
-    return MaterialApp(
-      home: Scaffold(
-        appBar: AppBar(
-          title: const Text('Plugin example app'),
-        ),
-        body: Center(
+    return getSimpleWidgetTestingPlugin();
+  }
+
+  Widget getSimpleWidgetTestingPlugin() {
+    return Scaffold(
+      appBar: AppBar(
+        title: const Text("Header"),
+      ),
+      body: Container(
+        padding: EdgeInsets.all(10),
+        child: Center(
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
-            children: [Text('Running on: $_platformVersion\n')
-            ,ElevatedButton(onPressed: () async{
-             await PluginDialog.showDialog();
-              }, child:const Text("Dialog"))],
+            crossAxisAlignment: CrossAxisAlignment.center,
+            children: [
+              CustomButton(onPressed: () {}, child: Text("Custom button")),
+              SizedBox(
+                width: 20,
+                height: 20,
+              ),
+              Text("Native Version ${_platformVersion}"),
+              TextButton(
+                  onPressed: () async {
+                    await PluginDialog.showDialog();
+                  },
+                  child: Text("Show Dialog "))
+            ],
           ),
         ),
       ),
     );
+  }
+
+  Widget getAndroidViewWidget() {
+    return MediaQuery(
+      data: const MediaQueryData(size: Size(30, 100)),
+      child: Directionality(
+          textDirection: TextDirection.ltr,
+          child: Scaffold(
+            appBar: AppBar(
+              title: const Text("Header"),
+            ),
+            body: Column(
+              mainAxisSize: MainAxisSize.min,
+              mainAxisAlignment: MainAxisAlignment.center,
+              crossAxisAlignment: CrossAxisAlignment.center,
+              children: [
+                Container(
+                    height: 50,
+                    child: Expanded(
+                        child: Directionality(
+                      textDirection: TextDirection.ltr,
+                      child: Padding(
+                        padding: EdgeInsets.all(15),
+                        child: Container(
+                          height: 30,
+                          child: getPV(),
+                        ),
+                      ),
+                    ))),
+                ElevatedButton(onPressed: () {}, child: Text("FDf"))
+              ],
+            ),
+          )),
+    );
+  }
+
+  late WebController controller;
+
+  Widget getPV() {
+    return NativeWeb(onWebCreated: onWebCreated);
+  }
+
+  void onWebCreated(WebController web) {
+    this.controller = web;
+    controller.loadUrl("url");
+  }
+
+  Widget getPlatformViewLinkWidget() {
+    const String viewType = '<platform-view-type>';
+    const Map<String, dynamic> creationParams = <String, dynamic>{};
+    return PlatformViewLink(
+        viewType: viewType,
+        surfaceFactory: (context, controller) {
+          return AndroidViewSurface(
+            controller: controller as AndroidViewController,
+            gestureRecognizers: const <Factory<OneSequenceGestureRecognizer>>{},
+            hitTestBehavior: PlatformViewHitTestBehavior.opaque,
+          );
+        },
+        onCreatePlatformView: (params) {
+          return PlatformViewsService.initSurfaceAndroidView(
+            id: params.id,
+            viewType: viewType,
+            layoutDirection: TextDirection.ltr,
+            creationParams: creationParams,
+            creationParamsCodec: const StandardMessageCodec(),
+            onFocus: () {
+              params.onFocusChanged(true);
+            },
+          );
+        });
   }
 }
