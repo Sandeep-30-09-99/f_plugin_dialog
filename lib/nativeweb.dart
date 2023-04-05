@@ -3,22 +3,23 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter/material.dart';
 
-typedef void WebViewCreatedCallback(WebController controller);
+typedef WebViewCreatedCallback = void Function(WebController controller);
 
 class NativeWeb extends StatefulWidget {
 
   final WebViewCreatedCallback onWebCreated;
 
-  NativeWeb({
-    Key? key,
+  const NativeWeb({super.key,
      required this.onWebCreated,
   });
 
   @override
-  _NativeWebState createState() => _NativeWebState();
+  NativeWebState createState() {
+    return  NativeWebState();
+  }
 }
 
-class _NativeWebState extends State<NativeWeb> {
+class NativeWebState extends State<NativeWeb> {
   @override
   Widget build(BuildContext context) {
     if(defaultTargetPlatform == TargetPlatform.android) {
@@ -39,9 +40,7 @@ class _NativeWebState extends State<NativeWeb> {
   }
 
   Future<void> onPlatformViewCreated(id) async {
-    if (widget.onWebCreated == null) {
-      return;
-    }
+
     widget.onWebCreated(WebController.init(id));
   }
 
